@@ -210,9 +210,9 @@ const BONDING_TARGET_ETH = 7.5;
 const IPFS_GATEWAYS = ['https://ipfs.io/ipfs/', 'https://dweb.link/ipfs/'];
 /* ===== PINNED TOKENS (always top of list) ===== */
 var PINNED_TOKENS = {
-  '0x70e2dfbb4d3fe46d16db79a103d060c904c1e14c': true
+  '0x020bfc650a365f8bb26819deaabf3e21291018b4': true
 };
-var DEFAULT_TOKEN_ADDR = '0x70e2dfbb4d3fe46d16db79a103d060c904c1e14c'; // $OIH
+var DEFAULT_TOKEN_ADDR = '0x020bfc650a365f8bb26819deaabf3e21291018b4'; // $CASHCAT
 
 /* ===== BLOCKLIST ===== */
 var BLOCKED_TOKENS = {
@@ -1689,7 +1689,7 @@ function init() {
   allTokens = (D.tokens || []).map(function(t) { t._source = 'embedded'; return normToken(t); });
   // Ensure $OIH always exists in token list
   (function() {
-    var htermAddr = '0x70e2dfbb4d3fe46d16db79a103d060c904c1e14c';
+    var htermAddr = '0x020bfc650a365f8bb26819deaabf3e21291018b4';
     if (!allTokens.find(function(t) { return t.a === htermAddr; })) {
       // [OIH removed - not yet deployed] allTokens.push({ a: htermAddr, s: 'OIH', n: 'OWL IN HOOD', dec: 18, v: 'V3', p: '0x5d58b7aa532cb88762f254dcfc6e363e65070af3', pools: 1, priceEth: 0, price: 0, ch: 0, mcEth: 0, mc: 0, liqEth: 0, liq: 0, volEth: 0, vol: 0, tx24: 0, ttx: 0, ca: Date.now() / 1000, source: 'hardcoded' });
     }
