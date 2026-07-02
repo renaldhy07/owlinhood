@@ -4,7 +4,7 @@
 const EXPLORER = 'https://robinhoodchain.blockscout.com';
 const RPC = 'https://robinhood-mainnet.g.alchemy.com/v2/Uu5_9CulvnpKfSOPc972S';
 const NOXA_API = 'https://awk00kk00gskkw0o8kc488kg.notoriouslywrong.com';
-const MY_API = '';
+const MY_API = 'x';
 const API_KEY = '';
 /* ===== MANUAL LOGOS (for tokens with no logo from APIs) ===== */
 const MANUAL_LOGOS = {
@@ -1421,58 +1421,8 @@ function updateStatus() {
 /* ===== OUR PRICE DATA ===== */
 var ourPriceMap = {};
 
-function mergeOurPrices() {
-  fetch(MY_API + '/prices', { headers: {'X-API-Key': API_KEY} }).then(function(r) { return r.json(); }).then(function(d) {
-    if (!d.success || !d.data) return;
-    // Update ETH/USD from our source
-    if (d.eth_usd && d.eth_usd > 0) {
-      ethPriceUsd = d.eth_usd;
-      document.getElementById('ethPriceTop').textContent = '$' + ethPriceUsd.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-    }
-    // Build lookup by token address (use whichever is not WETH)
-    ourPriceMap = {};
-    const WETH_ADDR_LOWER = '0x0bd7d308f8e1639fab988df18a8011f41eacad73';
-    d.data.forEach(function(p) {
-      var t0 = (p.token0.address || '').toLowerCase();
-      var t1 = (p.token1.address || '').toLowerCase();
-      var addr = t0 === WETH_ADDR_LOWER ? t1 : t0;
-      // Keep the most recent price per token
-      if (!ourPriceMap[addr] || p.last_updated > (ourPriceMap[addr].last_updated || '')) {
-        ourPriceMap[addr] = p;
-      }
-    });
-    // Merge into allTokens
-    var updated = 0;
-    allTokens.forEach(function(t) {
-      var addr = (t.a || '').toLowerCase();
-      var pd = ourPriceMap[addr];
-      if (pd) {
-        t.priceEth = pd.price_eth;
-        t.price = pd.price_usd || (pd.price_eth * ethPriceUsd);
-        // Use WebSocket priceCache if fresher than pool price (fixes stale pool sqrtPrice vs live swap price)
-        var pc = HT.state.priceCache[addr];
-        if (pc && pc.eth && pc.updatedAt && (Date.now() - pc.updatedAt < 60000)) {
-          t.priceEth = pc.eth;
-          t.price = pc.eth * ethPriceUsd;
-        }
-        t._source = 'our';
-        t.ch = pd.price_change_24h_pct !== null ? pd.price_change_24h_pct : t.ch;
-        t.volEth = pd.volume_24h_eth;
-        t.vol = pd.volume_24h_eth * ethPriceUsd;
-        t.tx24 = pd.tx_count_24h;
-        t.source = 'our';
-        // Use 6h change as fallback
-        if (t.ch === null || t.ch === undefined) t.ch = pd.price_change_6h_pct;
-        updated++;
-      }
-    });
-    if (updated > 0) {
-      document.getElementById('statusText').textContent = 'Live \u00b7 ' + allTokens.length + ' tokens \u00b7 ' + updated + ' our prices';
-      renderTokenList();
-      if (currentToken) updateTokenHeader();
-    }
-  }).catch(function(e) { });
-}
+function mergeOurPrices() { return; }
+
 
 /* ===== PORTFOLIO ===== */
 var portfolioData = null;
@@ -1648,7 +1598,7 @@ document.addEventListener('DOMContentLoaded', function() {
       renderTokenList();
     });
   });
-  document.getElementById('btnConnect').addEventListener('click', async function() {
+  (document.getElementById('btnConnect')||{}).addEventListener('click', async function() {
     var btn = document.getElementById('btnConnect');
     var btnSwap = document.getElementById('btnConnectSwap');
     // REAL MetaMask connection
@@ -1706,11 +1656,11 @@ document.addEventListener('DOMContentLoaded', function() {
     }
   });
   // Mobile swap-card connect button
-  document.getElementById('btnConnectSwap').addEventListener('click', function() {
+  (document.getElementById('btnConnectSwap')||{}).addEventListener('click', function() {
     document.getElementById('btnConnect').click();
   });
   // Portfolio button — switch to portfolio tab
-  document.getElementById('btnPortfolio').addEventListener('click', function() {
+  (document.getElementById('btnPortfolio')||{}).addEventListener('click', function() {
     document.querySelectorAll('.bt-btn').forEach(function(b) { b.classList.remove('active'); });
     var pfTab = document.querySelector('.bt-btn[data-tab="portfolio"]');
     if (pfTab) pfTab.classList.add('active');
@@ -1742,8 +1692,8 @@ document.addEventListener('DOMContentLoaded', function() {
       btn.classList.add('active'); swapSlippage = parseInt(btn.dataset.slip); calcSwapOutput();
     });
   });
-  document.getElementById('swapAmountInput').addEventListener('input', calcSwapOutput);
-  document.getElementById('btnSwapMain').addEventListener('click', executeSwap);
+  (document.getElementById('swapAmountInput')||{}).addEventListener('input', calcSwapOutput);
+  (document.getElementById('btnSwapMain')||{}).addEventListener('click', executeSwap);
   // Copy buttons
   document.querySelectorAll('.copy-btn').forEach(function(btn) {
     btn.addEventListener('click', function() {
