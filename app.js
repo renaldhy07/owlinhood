@@ -1,6 +1,3 @@
-// Mark JS as ready
-document.documentElement.classList.add('js-ready');
-
 // Highlight nav link matching the section currently in view
 (function () {
   const links = Array.from(document.querySelectorAll('.main-nav a'));
