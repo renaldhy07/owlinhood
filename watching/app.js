@@ -1435,7 +1435,7 @@ async function pollTrendingUpdates() {
 async function fetchAllNoxaTokens() {
   try {
     var allNoxaTokens = [];
-    for (var offset = 0; offset < 500; offset += 100) {
+    for (var offset = 0; offset < 5000; offset += 100) {
       try {
         var resp = await fetch(NOXA_API + '/v1/' + NOXA_CHAIN + '/tokens?limit=100&offset=' + offset, { cache: 'no-store' });
         if (!resp.ok) break;
@@ -1493,7 +1493,7 @@ async function fetchAllTokenLogos() {
   try {
     // Fetch all tokens from noxa to get logos for embedded tokens
     var allNoxaTokens = [];
-    for (var offset = 0; offset < 500; offset += 100) {
+    for (var offset = 0; offset < 5000; offset += 100) {
       try {
         var resp = await fetch(NOXA_API + '/v1/' + NOXA_CHAIN + '/tokens?limit=100&offset=' + offset, { cache: 'no-store' });
         if (!resp.ok) break;
