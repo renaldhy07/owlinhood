@@ -1,9 +1,5 @@
 
-if (typeof ethers === 'undefined') {
-    const script = document.createElement('script');
-    script.src = 'https://cdnjs.cloudflare.com/ajax/libs/ethers/5.7.2/ethers.umd.min.js';
-    document.head.appendChild(script);
-}
+// [ethers loading removed]
 /* ===== OWL IN HOOD v6 COMPLETE — Embedded + noxa API + on-chain liquidity ===== */
 const EXPLORER = 'https://robinhoodchain.blockscout.com';
 const RPC = 'https://robinhood-mainnet.g.alchemy.com/v2/Uu5_9CulvnpKfSOPc972S';
@@ -221,21 +217,9 @@ var BLOCKED_TOKENS = {
   '0x83bd0c579eaad92f2a6cb4b9e8267edbedaebf82': true,
   '0xb61c30f15475b1e60a89159b4fe648f0af87635a': true
 };
-const WETH_ADDR = '0x0bd7d308f8e1639fab988df18a8011f41eacad73';
-const SWAP_ROUTER_ADDR = '0xCaf681a66D020601342297493863E78C959E5cb2';
-const ROUTER_ABI = [
-  "function exactInputSingle((address tokenIn, address tokenOut, uint24 fee, address recipient, uint256 amountIn, uint256 amountOutMinimum, uint160 sqrtPriceLimitX96)) external payable returns (uint256 amountOut)",
-  "function multicall(bytes[] data) external payable returns (bytes[] results)"
-];
 
 
 // ERC20 ABI fragments for on-chain reads
-const ERC20_ABI = [
-  { "constant": true, "inputs": [], "name": "balanceOf", "outputs": [{ "name": "", "type": "uint256" }], "type": "function" },
-  { "constant": true, "inputs": [{ "name": "", "type": "address" }], "name": "balanceOf", "outputs": [{ "name": "", "type": "uint256" }], "type": "function" },
-  { "constant": true, "inputs": [], "name": "totalSupply", "outputs": [{ "name": "", "type": "uint256" }], "type": "function" },
-  { "constant": true, "inputs": [], "name": "decimals", "outputs": [{ "name": "", "type": "uint8" }], "type": "function" },
-];
 const POOL_ABI = [
   { "constant": true, "inputs": [], "name": "slot0", "outputs": [{ "name": "sqrtPriceX96", "type": "uint160" }, { "name": "tick", "type": "int24" }, { "name": "protocolFee", "type": "uint8" }, { "name": "liquidity", "type": "uint128" }], "type": "function" },
   { "constant": true, "inputs": [], "name": "liquidity", "outputs": [{ "name": "", "type": "uint128" }], "type": "function" },
@@ -317,8 +301,7 @@ let newTokenAddrs = new Set();
 let pollTimer = null;
 let sortCol = null, sortDir = 'desc';
 let fontScale = 1;
-let swapSide = 'buy';
-let swapSlippage = 5; // percent
+// swap vars removed
 let tokenLiquidity = {}; // addr -> {tokenReserve, ethReserve, totalUsd, totalEth, fetched}
 
 /* ===== TOKEN NORMALIZER ===== */
@@ -562,8 +545,7 @@ function selectToken(token) {
       token.liq = liq.totalUsd;
       token._liqOnChainAt = Date.now();
       updateTokenHeader();
-      updateSwapPanel();
-      updateRightPanel();
+            updateRightPanel();
       renderTokenList();
     }
   });
@@ -923,8 +905,7 @@ async function loadTabData(rid) {
     renderTrades(trades);
   } else if (curTab === 'toptraders') renderTopTraders(await fetchTrades(currentToken.a));
   else if (curTab === 'holders') renderHolders(currentToken);
-  else if (curTab === 'portfolio') { fetchPortfolio(window.userAccount).then(function() { renderPortfolio(); }); }
-  else if (curTab === 'info') renderInfo();
+    else if (curTab === 'info') renderInfo();
 }
 
 function renderTrades(trades) {
@@ -1083,155 +1064,17 @@ function renderInfo() {
 }
 
 /* ===== SWAP PANEL ===== */
-function updateSwapPanel() {
-  if (!currentToken) return;
-  var t = currentToken;
-  
-  
-  
-  
-  
-  // Show wallet balance if connected
-  if (window.userAccount) {
-    
-  } else {
-    
-  }
-  var liq = tokenLiquidity[t.a];
-  if (liq) {
-    
-  } else {
-    
-  }
-  calcSwapOutput();
-}
-
-function calcSwapOutput() {
-  if (!currentToken) return;
-  var amount = parseFloat(
-  var price = currentToken.priceEth || 0;
-  var liq = tokenLiquidity[currentToken.a];
-  var liqEth = liq ? (liq.wethReserve || liq.ethReserve) : (currentToken.liqEth || 0);
-  var outputEl = 
-  var impactEl = 
-  var minEl = 
-  var btnEl = 
-
-  if (amount <= 0) {
-    if (outputEl) outputEl.textContent = '0.00';
-    if (impactEl) { impactEl.textContent = '0.00%'; impactEl.style.color = ''; }
-    if (minEl) minEl.textContent = '\u2014';
-    if (btnEl) { btnEl.classList.add('disabled'); }
-    return;
-  }
-  if (btnEl) btnEl.classList.remove('disabled');
-
-  if (swapSide === 'buy') {
-    var tokensOut = price > 0 ? amount / price : 0;
-    var impact = liqEth > 0 ? Math.min((amount / liqEth) * 100, 50) : 0;
-    var minRecv = tokensOut * (1 - swapSlippage / 100);
-    if (outputEl) outputEl.textContent = fmtT(tokensOut);
-    if (impactEl) { impactEl.textContent = impact.toFixed(2) + '%'; impactEl.style.color = impact > 5 ? '#f87171' : impact > 1 ? '#f0c035' : '#2dd4bf'; }
-    if (minEl) minEl.textContent = fmtT(minRecv) + ' ' + currentToken.s;
-  } else {
-    var ethOut = price > 0 ? amount * price : 0;
-    var impact2 = liqEth > 0 ? Math.min((ethOut / liqEth) * 100, 50) : 0;
-    var minRecv2 = ethOut * (1 - swapSlippage / 100);
-    if (outputEl) outputEl.textContent = fmtE(ethOut);
-    if (impactEl) { impactEl.textContent = impact2.toFixed(2) + '%'; impactEl.style.color = impact2 > 5 ? '#f87171' : impact2 > 1 ? '#f0c035' : '#2dd4bf'; }
-    if (minEl) minEl.textContent = fmtE(minRecv2) + ' ETH';
-  }
-}
-
-function setSwapSide(side) {
-  swapSide = side;
-  document.querySelectorAll('.swap-side-btn').forEach(function(b) { b.classList.remove('active'); });
-  document.querySelector('.swap-side-btn[data-side="' + side + '"]').classList.add('active');
-  var btn = 
-  if (btn) { btn.className = 'btn-swap-action ' + (side === 'buy' ? 'btn-buy' : 'btn-sell'); btn.textContent = side === 'buy' ? 'Buy ' + (currentToken ? currentToken.s : '') : 'Sell ' + (currentToken ? currentToken.s : ''); }
-  updateSwapPanel();
-}
+// [updateSwapPanel removed]
 
 
-async function executeSwap() {
-  var amount = parseFloat(
-  if (amount <= 0) { showToast('Enter an amount first'); return; }
-  if (!window.userAccount) { showToast('Connect wallet first to execute swap'); return; }
-  if (!currentToken) { showToast('Select a token first'); return; }
+function calcSwapOutput() { /* swap removed */ }
 
-  const provider = new ethers.providers.Web3Provider(window.ethereum);
-  const signer = provider.getSigner();
-  const router = new ethers.Contract(SWAP_ROUTER_ADDR, ROUTER_ABI, signer);
-  
-  const isBuy = swapSide === 'buy';
-  const tokenIn = isBuy ? WETH_ADDR : currentToken.a;
-  const tokenOut = isBuy ? currentToken.a : WETH_ADDR;
-  const amountIn = ethers.utils.parseUnits(amount.toString(), isBuy ? 18 : currentToken.dec || 18);
-  
-  showToast('Initiating ' + (isBuy ? 'Buy' : 'Sell') + '...');
-
-  // --- Slippage protection (amountOutMinimum) ---
-  // Compute expected output from current price, then subtract user slippage.
-  const px = currentToken.priceEth || 0;
-  const outDec = isBuy ? (currentToken.dec || 18) : 18;
-  let expectedOut = 0;
-  if (px > 0) { expectedOut = isBuy ? (amount / px) : (amount * px); }
-  const slipFactor = Math.max(0, 1 - (swapSlippage || 5) / 100);
-  let amountOutMinimum = ethers.BigNumber.from(0);
-  if (expectedOut > 0) {
-    const minOut = expectedOut * slipFactor;
-    // Cap decimals to token precision to avoid parseUnits overflow
-    const minOutStr = minOut.toFixed(Math.min(outDec, 18));
-    try { amountOutMinimum = ethers.utils.parseUnits(minOutStr, outDec); } catch (e) { amountOutMinimum = ethers.BigNumber.from(0); }
-  }
-
-  try {
-    // 1. Jika SELL, butuh Approve token dulu
-    if (!isBuy) {
-        const tokenContract = new ethers.Contract(tokenIn, ERC20_ABI, signer);
-        const allowance = await tokenContract.allowance(window.userAccount, SWAP_ROUTER_ADDR);
-        if (allowance.lt(amountIn)) {
-            showToast('Approving token...');
-            const approveTx = await tokenContract.approve(SWAP_ROUTER_ADDR, ethers.constants.MaxUint256);
-            await approveTx.wait();
-            showToast('Approval successful!');
-        }
-    }
-
-    // 2. Execute Swap
-    const params = {
-      tokenIn: tokenIn,
-      tokenOut: tokenOut,
-      fee: 3000, // 0.3% fee tier as default for Uniswap V3
-      recipient: window.userAccount,
-      amountIn: amountIn,
-      amountOutMinimum: amountOutMinimum, // slippage-protected min output
-      sqrtPriceLimitX96: 0
-    };
-
-    let tx;
-    if (isBuy) {
-      // Buy token with ETH (WETH)
-      tx = await router.exactInputSingle(params, { value: amountIn });
-    } else {
-      // Sell token for ETH
-      tx = await router.exactInputSingle(params);
-    }
-
-    showToast('Transaction sent! Waiting for confirmation...');
-    const receipt = await tx.wait();
-    showToast('Swap Successful! Hash: ' + receipt.transactionHash.substring(0, 10) + '...');
-    
-    // Refresh data
-    setTimeout(loadTokenData, 2000);
-  } catch (err) {
-    console.error(err);
-    showToast('Swap Failed: ' + (err.reason || err.message || 'Unknown error'));
-  }
-}
+// [setSwapSide removed]
 
 
-/* ===== RIGHT PANEL ===== */
+// [executeSwap removed]
+
+
 function updateRightPanel() {
   if (!currentToken) return;
   var t = currentToken;
@@ -1276,8 +1119,7 @@ function updateRightPanel() {
   document.getElementById('contractCreator').textContent = sA(t.creator);
   document.getElementById('contractCreator').title = t.creator;
 
-  updateSwapPanel();
-}
+  }
 
 /* ===== COPY CONTRACT ===== */
 function copyContract(targetId) {
@@ -1423,7 +1265,7 @@ async function pollTrendingUpdates() {
       renderTokenList();
       if (currentToken) {
         var cur = allTokens.find(function(t) { return t.a === currentToken.a; });
-        if (cur) { currentToken = cur; updateTokenHeader(); updateSwapPanel(); }
+        if (cur) { currentToken = cur; updateTokenHeader();  }
       }
     }
   } catch (e) { }
@@ -1618,78 +1460,12 @@ function mergeOurPrices() {
 var portfolioData = null;
 var portfolioLoading = false;
 
-async function fetchPortfolio(walletAddr) {
-  if (!walletAddr || portfolioLoading) return;
-  portfolioLoading = true;
-  try {
-    // Get ETH balance
-    var ethRes = await (await fetch(RPC, {
-      method:'POST', headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({jsonrpc:'2.0',id:0,method:'eth_getBalance',params:[walletAddr,'latest']})
-    })).json();
-    var ethBal = parseInt(ethRes.result||'0x0',16) / 1e18;
+// [fetchPortfolio removed]
 
-    // Batch balanceOf for all tokens via JSON-RPC batch (chunks of 100)
-    var padded = walletAddr.toLowerCase().replace('0x','').padStart(64,'0');
-    var tokens = allTokens.filter(function(t){ return t.a && t.a.length===42; });
-    var CHUNK = 100;
-    var holdings = [];
 
-    for (var ci = 0; ci < tokens.length; ci += CHUNK) {
-      var chunk = tokens.slice(ci, ci + CHUNK);
-      var batch = [];
-      chunk.forEach(function(t, i) {
-        batch.push({jsonrpc:'2.0', id:ci+i+1, method:'eth_call', params:[{to:t.a, data:'0x70a08231'+padded},'latest']});
-      });
-      var resp = await (await fetch(RPC, {
-        method:'POST', headers:{'Content-Type':'application/json'},
-        body: JSON.stringify(batch)
-      })).json();
-
-      if (Array.isArray(resp)) {
-        resp.forEach(function(r) {
-          var idx = r.id - 1;
-          var token = tokens[idx];
-          if (!token || !r.result || r.result.length < 66) return;
-          try {
-            var bal = BigInt(r.result);
-            if (bal > 0n) {
-              var dec = token.dec || 18;
-              var divisor = BigInt(10) ** BigInt(dec);
-              var whole = Number(bal / divisor);
-              var frac = Number(bal % divisor) / Number(divisor);
-              var humanBal = whole + frac;
-              var priceEth = token.priceEth || 0;
-              var valEth = humanBal * priceEth;
-              if (valEth > 0.0001 || humanBal > 0) {
-                holdings.push({token:token, balance:humanBal, priceEth:priceEth, valEth:valEth});
-              }
-            }
-          } catch(e) {}
-        });
-      }
-    }
-
-    holdings.sort(function(a,b){ return b.valEth - a.valEth; });
-    var totalTokenEth = holdings.reduce(function(s,h){ return s+h.valEth; }, 0);
-    var totalEth = ethBal + totalTokenEth;
-
-    portfolioData = {
-      ethBalance: ethBal,
-      holdings: holdings,
-      totalTokenEth: totalTokenEth,
-      totalEth: totalEth,
-      totalUsd: totalEth * ethPriceUsd,
-      updatedAt: Date.now()
-    };
-  } catch(e) { console.error('Portfolio fetch error:', e); }
-  portfolioLoading = false;
-}
-
-function renderPortfolio() {
+// [renderPortfolio removed]
   var container = document.getElementById('txnList');
-  if (!window.userAccount) {
-    container.innerHTML = '<div class="loading-placeholder" style="text-align:center;padding:40px 20px;">' +
+      container.innerHTML = '<div class="loading-placeholder" style="text-align:center;padding:40px 20px;">' +
       '<div style="font-size:14px;color:var(--text-dim);margin-bottom:16px;">Connect wallet to view your portfolio</div>' +
       
       '</div>';
@@ -1798,8 +1574,7 @@ function init() {
           currentToken.liq = liq.totalUsd;
           currentToken._liqOnChainAt = Date.now();
           updateTokenHeader();
-          updateSwapPanel();
-          updateRightPanel();
+                    updateRightPanel();
         }
       });
       fetchOnChainSupply(currentToken).then(function(supply) {
@@ -1810,8 +1585,7 @@ function init() {
       });
     }
     // Refresh portfolio if wallet connected and on portfolio tab
-    if (window.userAccount && curTab === 'portfolio') {
-      fetchPortfolio(window.userAccount).then(function() { renderPortfolio(); });
+    );
     }
   }, 30000);
 
@@ -1897,72 +1671,53 @@ document.addEventListener('DOMContentLoaded', function() {
     });
   });
   
-    var btnSwap = 
+    var btnSwap = null;
     // REAL MetaMask connection
-    if (typeof window.ethereum !== 'undefined') {
+    if (false /* wallet removed */) {
       try {
-        btn.textContent = 'Connecting...';
-        if (btnSwap) btnSwap.textContent = 'Connecting...';
-        var accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
+        // [connecting text removed]
+                var accounts = // [ethereum request removed]
         if (accounts && accounts.length > 0) {
           var addr = accounts[0];
           btn.classList.add('connected');
           btn.textContent = addr.slice(0, 6) + '...' + addr.slice(-4);
-          if (btnSwap) { btnSwap.classList.add('connected'); btnSwap.textContent = addr.slice(0, 6) + '...' + addr.slice(-4); }
-          window.userAccount = addr;
+                    // [userAccount removed]
           // Check if on Robinhood L2 (chainId 4663 = 0x1237)
           try {
-            var chainId = await window.ethereum.request({ method: 'eth_chainId' });
+            var chainId = // [ethereum request removed]
             if (chainId !== '0x1237') {
               showToast('Wrong network — switch to Robinhood L2 (Chain ID 4663)');
               try {
-                await window.ethereum.request({
-                  method: 'wallet_switchEthereumChain',
-                  params: [{ chainId: '0x1237' }],
-                });
+                // [wallet_switchEthereumChain removed]
               } catch (switchErr) {
                 if (switchErr.code === 4902) {
-                  await window.ethereum.request({
-                    method: 'wallet_addEthereumChain',
-                    params: [{
-                      chainId: '0x1237',
-                      chainName: 'Robinhood L2',
-                      nativeCurrency: { name: 'Ether', symbol: 'ETH', decimals: 18 },
-                      rpcUrls: ['https://robinhood-mainnet.g.alchemy.com/v2/Uu5_9CulvnpKfSOPc972S'],
-                      blockExplorerUrls: ['https://robinhoodchain.blockscout.com/'],
-                    }],
-                  });
+                  // [wallet_addEthereumChain removed]
                 }
               }
             }
           } catch (e) { }
           showToast('Wallet connected: ' + addr.slice(0, 6) + '...' + addr.slice(-4));
-          updateSwapPanel();
-          // Pre-fetch portfolio data
-          fetchPortfolio(addr).then(function() { if (curTab === 'portfolio') renderPortfolio(); });
+                    // Pre-fetch portfolio data
+          // [portfolio fetch removed] });
         }
       } catch (err) {
         btn.textContent = 'Connect Wallet';
-        if (btnSwap) btnSwap.textContent = 'Connect Wallet';
-        showToast('Connection rejected');
+                showToast('Connection rejected');
       }
     } else {
-      showToast('MetaMask not found — install metamask.io');
-      btn.textContent = 'Install MetaMask';
-      if (btnSwap) btnSwap.textContent = 'Install MetaMask';
-    }
+      // [metamask toast removed]
+      // [metamask text removed]
+          }
   });
-  // Mobile swap-card connect button
-  
+    
   // Portfolio button — switch to portfolio tab
    });
     var pfTab = document.querySelector('.bt-btn[data-tab="portfolio"]');
     if (pfTab) pfTab.classList.add('active');
     curTab = 'portfolio';
-    if (window.userAccount) {
-      fetchPortfolio(window.userAccount).then(function() { renderPortfolio(); });
+          // [portfolio fetch removed] });
     } else {
-      renderPortfolio();
+      // [renderPortfolio removed]
     }
   });
   // Sortable headers
@@ -1974,16 +1729,14 @@ document.addEventListener('DOMContentLoaded', function() {
     });
   });
   // Swap panel
-  document.querySelectorAll('.swap-side-btn').forEach(function(btn) {
-    btn.addEventListener('click', function() { setSwapSide(btn.dataset.side); });
-  });
+  // [swap-side-btn listeners removed]
   document.querySelectorAll('.swap-quick-btn').forEach(function(btn) {
     btn.addEventListener('click', function() {  calcSwapOutput(); });
   });
   document.querySelectorAll('.slip-btn').forEach(function(btn) {
     btn.addEventListener('click', function() {
       document.querySelectorAll('.slip-btn').forEach(function(b) { b.classList.remove('active'); });
-      btn.classList.add('active'); swapSlippage = parseInt(btn.dataset.slip); calcSwapOutput();
+      // [swapSlippage listener removed]
     });
   });
   
