@@ -1889,30 +1889,9 @@ function applyFontScale() {
   if (chart) chart.applyOptions({ layout: { fontSize: Math.round(11 * fontScale) } });
 }
 // Setup WebSocket for real-time updates from MY_API
-function setupMyWebSocket() {
-  const ws = new WebSocket(MY_API.replace('http', 'ws').replace('/api/v1', '/ws/swaps') + '?key=' + API_KEY);
-  ws.onopen = () => { HT.state.wsStatus = 'connected'; };
-  ws.onerror = () => { HT.state.wsStatus = 'error'; };
-  ws.onmessage = (event) => {
-    const msg = JSON.parse(event.data);
-    if (msg.type === 'new_swap') {
-      const s = msg.data;
-      const ts = Math.floor((s.block_timestamp_unix || Date.now() / 1000));
-      const isWeth0 = (s.token0 || '').toLowerCase() === WETH_ADDR;
-      const side = isWeth0 ? (parseFloat(s.amount1) > 0 ? 'buy' : 'sell') : (parseFloat(s.amount0) > 0 ? 'buy' : 'sell');
-      const amt0 = Math.abs(parseFloat(s.amount0 || 0)) / 1e18;
-      const amt1 = Math.abs(parseFloat(s.amount1 || 0)) / 1e18;
-      const price = (amt0 > 0 && amt1 > 0) ? (isWeth0 ? amt0 / amt1 : amt1 / amt0) : 0;
-      // Normalize: t[2]=tokenAmount, t[3]=ethAmount regardless of WETH position
-      const tokenAmt = isWeth0 ? amt1 : amt0;
-      const ethAmt = isWeth0 ? amt0 : amt1;
-      // [timestamp, side, tokenAmt, ethAmt, priceEth, txHash, sender, token0, token1]
-      dispatch({ type: 'NEW_TRADE', data: [ts, side, tokenAmt, ethAmt, price, s.tx_hash, '', s.token0, s.token1] });
-    }
-  };
-  ws.onclose = () => setTimeout(setupMyWebSocket, 5000);
-}
-setupMyWebSocket();
+function setupMyWebSocket() { return; }
+
+
 /* v6.1-holders */
 /* v6.2 */
 /* v6.3 */
