@@ -564,7 +564,7 @@ function selectToken(token) {
       token.liq = liq.totalUsd;
       token._liqOnChainAt = Date.now();
       updateTokenHeader();
-      updateSwapPanel();
+      ;
       updateRightPanel();
       renderTokenList();
     }
@@ -1085,7 +1085,7 @@ function renderInfo() {
 }
 
 /* ===== SWAP PANEL ===== */
-function updateSwapPanel_removed() {
+function updateSwapPanel() {
   if (!currentToken) return;
   var t = currentToken;
   document.getElementById('swapRateToken').textContent = t.s;
@@ -1105,10 +1105,10 @@ function updateSwapPanel_removed() {
   } else {
     document.getElementById('swapLiq').textContent = t.liqEth ? fmtEth(t.liqEth) + ' ETH' : '—';
   }
-  calcSwapOutput();
+  ;
 }
 
-function calcSwapOutput_removed() {
+function calcSwapOutput() {
   if (!currentToken) return;
   var amount = parseFloat(document.getElementById('swapAmountInput').value) || 0;
   var price = currentToken.priceEth || 0;
@@ -1145,17 +1145,17 @@ function calcSwapOutput_removed() {
   }
 }
 
-function setSwapSide_removed(side) {
+function setSwapSide(side) {
   swapSide = side;
   document.querySelectorAll('.swap-side-btn').forEach(function(b) { b.classList.remove('active'); });
   document.querySelector('.swap-side-btn[data-side="' + side + '"]').classList.add('active');
   var btn = document.getElementById('btnSwapMain');
   if (btn) { btn.className = 'btn-swap-action ' + (side === 'buy' ? 'btn-buy' : 'btn-sell'); btn.textContent = side === 'buy' ? 'Buy ' + (currentToken ? currentToken.s : '') : 'Sell ' + (currentToken ? currentToken.s : ''); }
-  updateSwapPanel();
+  ;
 }
 
 
-async function executeSwap_removed() {
+async function executeSwap() {
   var amount = parseFloat(document.getElementById('swapAmountInput').value) || 0;
   if (amount <= 0) { showToast('Enter an amount first'); return; }
   if (!window.userAccount) { showToast('Connect wallet first to execute swap'); return; }
@@ -1278,7 +1278,7 @@ function updateRightPanel() {
   document.getElementById('contractCreator').textContent = sA(t.creator);
   document.getElementById('contractCreator').title = t.creator;
 
-  updateSwapPanel();
+  ;
 }
 
 /* ===== COPY CONTRACT ===== */
@@ -1425,7 +1425,7 @@ async function pollTrendingUpdates() {
       renderTokenList();
       if (currentToken) {
         var cur = allTokens.find(function(t) { return t.a === currentToken.a; });
-        if (cur) { currentToken = cur; updateTokenHeader(); updateSwapPanel(); }
+        if (cur) { currentToken = cur; updateTokenHeader(); ; }
       }
     }
   } catch (e) { }
@@ -1750,7 +1750,7 @@ function init() {
           currentToken.liq = liq.totalUsd;
           currentToken._liqOnChainAt = Date.now();
           updateTokenHeader();
-          updateSwapPanel();
+          ;
           updateRightPanel();
         }
       });
@@ -1890,7 +1890,7 @@ document.addEventListener('DOMContentLoaded', function() {
             }
           } catch (e) { }
           showToast('Wallet connected: ' + addr.slice(0, 6) + '...' + addr.slice(-4));
-          updateSwapPanel();
+          ;
           // Pre-fetch portfolio data
           fetchPortfolio(addr).then(function() { if (curTab === 'portfolio') renderPortfolio(); });
         }
@@ -1934,12 +1934,12 @@ document.addEventListener('DOMContentLoaded', function() {
     btn.addEventListener('click', function() { setSwapSide(btn.dataset.side); });
   });
   document.querySelectorAll('.swap-quick-btn').forEach(function(btn) {
-    btn.addEventListener('click', function() { document.getElementById('swapAmountInput').value = btn.dataset.amt; calcSwapOutput(); });
+    btn.addEventListener('click', function() { document.getElementById('swapAmountInput').value = btn.dataset.amt; ; });
   });
   document.querySelectorAll('.slip-btn').forEach(function(btn) {
     btn.addEventListener('click', function() {
       document.querySelectorAll('.slip-btn').forEach(function(b) { b.classList.remove('active'); });
-      btn.classList.add('active'); swapSlippage = parseInt(btn.dataset.slip); calcSwapOutput();
+      btn.classList.add('active'); swapSlippage = parseInt(btn.dataset.slip); ;
     });
   });
   document.getElementById('swapAmountInput').addEventListener('input', calcSwapOutput);
