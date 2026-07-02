@@ -247,3 +247,108 @@ img{max-width:100%;display:block}
   .foot-right{align-items:center}
   .chat-bubble{font-size:9px;padding:3px 7px}
 }
+
+
+/* ===== VISUAL EFFECTS ===== */
+
+/* Scanline overlay on hero */
+.hero::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  pointer-events: none;
+  background: repeating-linear-gradient(
+    0deg,
+    transparent,
+    transparent 2px,
+    rgba(0, 0, 0, 0.03) 2px,
+    rgba(0, 0, 0, 0.03) 4px
+  );
+  animation: scanlines 8s linear infinite;
+}
+@keyframes scanlines {
+  0% { background-position: 0 0; }
+  100% { background-position: 0 100vh; }
+}
+
+/* Glitch effect on brand name hover */
+.brand-name {
+  position: relative;
+  transition: 0.2s;
+}
+.brand-name:hover {
+  animation: glitch 0.3s ease;
+  text-shadow: 2px 0 #ff0040, -2px 0 #0ff;
+}
+@keyframes glitch {
+  0% { text-shadow: 2px 0 #ff0040, -2px 0 #0ff; transform: translate(0); }
+  20% { text-shadow: -2px 0 #ff0040, 2px 0 #0ff; transform: translate(-2px, 1px); }
+  40% { text-shadow: 2px 0 #0ff, -2px 0 #ff0040; transform: translate(2px, -1px); }
+  60% { text-shadow: -1px 0 #ff0040, 1px 0 #0ff; transform: translate(-1px, 2px); }
+  80% { text-shadow: 1px 0 #0ff, -1px 0 #ff0040; transform: translate(1px, -2px); }
+  100% { text-shadow: none; transform: translate(0); }
+}
+
+/* Neon flicker on $OIH ticker */
+.brand-ticker {
+  animation: neonFlicker 3s ease-in-out infinite;
+}
+@keyframes neonFlicker {
+  0%, 19%, 21%, 23%, 25%, 54%, 56%, 100% {
+    text-shadow: 0 0 7px rgba(142,222,58,0.6), 0 0 20px rgba(142,222,58,0.3);
+    opacity: 1;
+  }
+  20%, 24%, 55% {
+    text-shadow: none;
+    opacity: 0.7;
+  }
+}
+
+/* Chapter fade-in on scroll */
+.chapter {
+  opacity: 0;
+  transform: translateY(30px);
+  transition: opacity 0.7s ease, transform 0.7s ease;
+}
+.chapter.visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* Chapter image glow on scroll */
+.ch-img {
+  transition: box-shadow 0.6s ease, transform 0.6s ease;
+}
+.chapter.visible .ch-img {
+  box-shadow: 0 0 30px rgba(142,222,58,0.12);
+}
+
+/* Hero parallax subtle */
+.hero-media {
+  will-change: transform;
+}
+
+/* Social icon hover glow */
+.soc:hover {
+  animation: socPulse 0.4s ease;
+}
+@keyframes socPulse {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.15); }
+  100% { transform: scale(1); }
+}
+
+/* Hero title stagger */
+.hero-title span {
+  opacity: 0;
+  transform: translateX(-20px);
+  animation: titleSlideIn 0.6s ease forwards;
+}
+.hero-title span:nth-child(1) { animation-delay: 0.1s; }
+.hero-title span:nth-child(2) { animation-delay: 0.25s; }
+.hero-title span:nth-child(3) { animation-delay: 0.4s; }
+.hero-title span:nth-child(4) { animation-delay: 0.55s; }
+@keyframes titleSlideIn {
+  to { opacity: 1; transform: translateX(0); }
+}

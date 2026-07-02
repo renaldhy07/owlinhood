@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=1280, initial-scale=0.25, minimum-scale=0.25, maximum-scale=2.0, user-scalable=yes" />
+<meta name="theme-color" content="#0a0e12" />
+<title>OWL IN HOOD · Watching</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Spline+Sans+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+<script src="https://unpkg.com/lightweight-charts@4.1.3/dist/lightweight-charts.standalone.production.js"></script>
+<link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+<div id="root">
+  <header id="topbar">
+    <button class="hamburger hamburger-left" id="hamburgerLeft">☰</button>
+    <div class="topbar-section topbar-logo">
+      <span class="logo-icon">⬢</span>
+      <span class="logo-text">OWL IN HOOD</span>
+      <span class="logo-version">LIVE</span>
+      <a class="btn-back-story" href="/">The Lore</a>
+</div>
+    <div class="topbar-section topbar-pair">
+      <div class="pair-selector" id="pairSelector">
+        <span class="pair-base" id="pairBase">—</span>
+        <span class="pair-sep">/</span>
+        <span class="pair-quote">WETH</span>
+        <span class="pair-version" id="pairVersion">—</span>
+      </div>
+      <div class="pair-price-block">
+        <span class="pair-price" id="pairPrice">$0.00</span>
+        <span class="pair-change" id="pairChange">0.00%</span>
+      </div>
+    </div>
+    <div class="topbar-section topbar-fee">
+      <span>Robinhood L2 · ETH:</span>
+      <span class="eth-price" id="ethPriceTop">$0.00</span>
+    </div>
+    <div class="topbar-section topbar-actions">
+      
+      
+      
+      <button class="hamburger hamburger-right" id="hamburgerRight">⚙</button>
+    </div>
+  </header>
+
+  <div class="mobile-backdrop" id="mobileBackdrop"></div>
+
+  <div class="main-layout" id="mainLayout">
+    <aside class="sidebar-left" id="sidebarLeft">
+      <div class="sidebar-tabs">
+        <button class="sb-tab active" data-tab="all" id="sbTabAll">ALL</button>
+        <button class="sb-tab" data-tab="newest">NEW</button>
+        <button class="sb-tab" data-tab="trending">HOT</button>
+      </div>
+      <div class="sidebar-filters">
+        <span class="filter-chip" data-filter="graduated">GRADUATED</span>
+        <span class="filter-chip" data-filter="bonding">BONDING</span>
+      </div>
+      <div class="search-box">
+        <input type="text" id="tokenSearch" placeholder="Search token..." />
+      </div>
+      <div class="token-list-header" id="tokenListHeader">
+        <span class="th-rank"></span>
+        <span class="th-pair sortable" data-sort="pair">Trading Pairs</span>
+        <span class="th-price sortable" data-sort="price">Price <span class="sort-arrow" id="arrowPrice"></span></span>
+        <span class="th-change sortable" data-sort="change">24H <span class="sort-arrow" id="arrowChange"></span></span>
+        <span class="th-liq sortable" data-sort="mcap">MCap <span class="sort-arrow" id="arrowMcap"></span></span>
+      </div>
+      <div class="token-list" id="tokenList">
+        <div class="loading-placeholder">Loading markets...</div>
+      </div>
+    </aside>
+    <div class="resizer resizer-left" id="resizerLeft"></div>
+
+    <main class="center-area" id="centerArea">
+      <div class="chart-toolbar">
+        <div class="timeframe-group" id="timeframeGroup">
+          <button class="tf-btn" data-tf="1m">1m</button>
+          <button class="tf-btn" data-tf="5m">5m</button>
+          <button class="tf-btn" data-tf="15m">15m</button>
+          <button class="tf-btn active" data-tf="1h">1h</button>
+          <button class="tf-btn" data-tf="4h">4h</button>
+          <button class="tf-btn" data-tf="1d">1d</button>
+          <button class="scale-toggle" id="scaleToggle" title="Toggle Linear/Log scale">Log</button>
+        </div>
+        <div class="price-toggle">
+          <button class="pt-btn" data-unit="eth">ETH</button>
+          <button class="pt-btn active" data-unit="usd">USD</button>
+        </div>
+      </div>
+      <div class="chart-wrapper">
+        <div class="chart-warning" id="chartWarning"></div>
+        <div class="chart-type-menu" id="chartTypeMenu">
+          <button class="ct-vertical active" data-type="candle">Candle</button>
+          <button class="ct-vertical" data-type="line">Line</button>
+          <button class="ct-vertical" data-type="area">Area</button>
+          <button class="ct-vertical" data-type="baseline">Baseline</button>
+          <button class="ct-vertical" data-type="hollow">Hollow</button>
+          <button class="ct-vertical" data-type="ha">Heikin Ashi</button>
+        </div>
+        <div class="chart-container" id="chartContainer">
+          <div class="chart-loading" id="chartLoading">Loading chart...</div>
+          <div class="ohlc-tooltip" id="ohlcTooltip"></div>
+        </div>
+        <div class="indicator-menu" id="indicatorMenu">
+          <button class="ind-vertical active" data-ind="ma7">MA7</button>
+          <button class="ind-vertical active" data-ind="ma25">MA25</button>
+          <button class="ind-vertical" data-ind="ma59">MA59</button>
+          <button class="ind-vertical" data-ind="boll">Bollinger</button>
+          <button class="ind-vertical active" data-ind="volume">Volume</button>
+        </div>
+      </div>
+      <div class="chart-brand">
+        <span>Charting by</span>
+        <a href="https://www.tradingview.com/" target="_blank" rel="noopener">TradingView</a>
+      </div>
+      <div class="resizer-chart" id="resizerChart"></div>
+      <div class="bottom-panel">
+        <div class="bottom-tabs-row">
+          <div class="bottom-tabs-left">
+            <button class="bt-btn active" data-tab="transactions">Transactions</button>
+            <button class="bt-btn" data-tab="toptraders">Top Traders</button>
+            <button class="bt-btn" data-tab="holders">Holders</button>
+            
+            <button class="bt-btn" data-tab="info">Info</button>
+          </div>
+          <div class="bottom-tabs-right">
+            <div class="trade-filter" id="tradeFilter">
+              <button class="tf-filter active" data-side="all">All</button>
+              <button class="tf-filter" data-side="BUY">Buys</button>
+              <button class="tf-filter" data-side="SELL">Sells</button>
+            </div>
+          </div>
+        </div>
+        <div class="txn-table">
+          <div class="txn-header" id="txnHeader">
+            <span class="txn-col th-date">Date</span>
+            <span class="txn-col th-type">Type</span>
+            <span class="txn-col th-token-amt">Token Amount</span>
+            <span class="txn-col th-eth-amt">ETH Amount</span>
+            <span class="txn-col th-usd-amt">USD Amount</span>
+            <span class="txn-col th-price">Price</span>
+            <span class="txn-col th-mcap">MCap</span>
+            <span class="txn-col th-tx">Tx</span>
+          </div>
+          <div class="txn-list" id="txnList">
+            <div class="loading-placeholder">Loading transactions...</div>
+          </div>
+        </div>
+      </div>
+    </main>
+    <div class="resizer resizer-right" id="resizerRight"></div>
+
+    <aside class="sidebar-right" id="sidebarRight">
+      
+      <div class="stats-sub" id="statsSub">
+        <span id="statBuys">—</span><span class="sub-sep">B</span><span id="statSells">—</span><span class="sub-sep">S</span>
+        <span id="statVolBuys">—</span><span class="sub-sep">|</span><span id="statVolSells">—</span>
+      </div>
+
+      <div class="section-header"><span class="section-icon">@</span><span class="section-title-text">Security Audit</span></div>
+      <div class="security-card">
+        <div class="sec-row"><span class="sec-label">Honeypot</span><span class="sec-value green">No</span></div>
+        <div class="sec-row"><span class="sec-label">Supply</span><span class="sec-value" id="secSupply">—</span></div>
+        <div class="sec-row"><span class="sec-label">MCap (ETH)</span><span class="sec-value" id="secMcapEth">—</span></div>
+        <div class="sec-row"><span class="sec-label">Liquidity</span><span class="sec-value" id="secLiquidity">—</span></div>
+        <div class="sec-row"><span class="sec-label">Mintable</span><span class="sec-value green">No</span></div>
+        <div class="sec-row"><span class="sec-label">FeeTier</span><span class="sec-value" id="secFeeTier">—</span></div>
+        <div class="sec-row"><span class="sec-label">Buy Tax</span><span class="sec-value green">0%</span></div>
+        <div class="sec-row"><span class="sec-label">Sell Tax</span><span class="sec-value green">0%</span></div>
+        <div class="sec-row"><span class="sec-label">ATH MCap</span><span class="sec-value" id="secAth">—</span></div>
+        <div class="sec-row"><span class="sec-label">Created</span><span class="sec-value" id="secCreated">—</span></div>
+      </div>
+
+      <div class="about-card">
+        <p id="descText">—</p>
+        <div class="social-links" id="socialLinks"></div>
+        <div class="desc-tags" id="descTags"></div>
+      </div>
+
+      <div class="section-header"><span class="section-icon">©</span><span class="section-title-text">Contracts</span></div>
+      <div class="contracts-card">
+        <div class="contract-row"><span class="contract-label">Pool</span><span class="contract-value mono" id="contractPool">—</span><button class="copy-btn" data-copy="contractPool">Copy</button></div>
+        <div class="contract-row"><span class="contract-label" id="contractLabel">Token</span><span class="contract-value mono" id="contractToken">—</span><button class="copy-btn" data-copy="contractToken">Copy</button></div>
+        <div class="contract-row"><span class="contract-label">Creator</span><span class="contract-value mono" id="contractCreator">—</span><button class="copy-btn" data-copy="contractCreator">Copy</button></div>
+        <div class="contract-row"><span class="contract-label">WETH</span><span class="contract-value mono">0x0bd7..ad73</span><button class="copy-btn" data-copy-target="0x0bd7d308f8e1639fab988df18a8011f41eacad73">Copy</button></div>
+      </div>
+    </aside>
+  </div>
+
+  <footer id="statusbar">
+    <div class="status-left">
+      <span class="status-dot" id="statusDot"></span>
+      <span id="statusText">Connecting...</span>
+    </div>
+    <div class="status-right">
+      <span>RPC: Alchemy</span>
+      <span class="status-sep">|</span>
+      <span>Explorer: robinhoodchain.blockscout.com</span>
+      <span class="status-sep">|</span>
+      <span>Network: Robinhood L2</span>
+      <span class="status-sep">|</span>
+      <span id="autoRefreshStatus">Auto: ON</span>
+    </div>
+  </footer>
+</div>
+<script src="app.js"></script>
+<!-- 1782939868" --></body>
+</html>

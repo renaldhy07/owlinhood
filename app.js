@@ -18,3 +18,35 @@
   window.addEventListener('scroll', onScroll, { passive: true });
   onScroll();
 })();
+
+// Intersection Observer — fade in chapters on scroll
+(function () {
+  const chapters = document.querySelectorAll('.chapter');
+  if (!chapters.length) return;
+  const obs = new IntersectionObserver(function (entries) {
+    entries.forEach(function (e) {
+      if (e.isIntersecting) {
+        e.target.classList.add('visible');
+        obs.unobserve(e.target);
+      }
+    });
+  }, { threshold: 0.15 });
+  chapters.forEach(function (ch) { obs.observe(ch); });
+})();
+
+// Parallax on hero media
+(function () {
+  var hero = document.querySelector('.hero-media');
+  if (!hero) return;
+  var ticking = false;
+  window.addEventListener('scroll', function () {
+    if (!ticking) {
+      requestAnimationFrame(function () {
+        var y = window.scrollY;
+        hero.style.transform = 'translateY(' + (y * 0.3) + 'px)';
+        ticking = false;
+      });
+      ticking = true;
+    }
+  }, { passive: true });
+})();
