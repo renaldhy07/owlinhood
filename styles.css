@@ -305,13 +305,17 @@ img{max-width:100%;display:block}
   }
 }
 
-/* Chapter fade-in on scroll */
+/* Chapter fade-in on scroll — JS adds .visible, fallback for no-JS */
 .chapter {
-  opacity: 0;
-  transform: translateY(30px);
+  opacity: 1;
+  transform: translateY(0);
   transition: opacity 0.7s ease, transform 0.7s ease;
 }
-.chapter.visible {
+.js-ready .chapter {
+  opacity: 0;
+  transform: translateY(30px);
+}
+.chapter.visible, .js-ready .chapter.visible {
   opacity: 1;
   transform: translateY(0);
 }
