@@ -1,11 +1,15 @@
 
-
+if (typeof ethers === 'undefined') {
+    const script = document.createElement('script');
+    script.src = 'https://cdnjs.cloudflare.com/ajax/libs/ethers/5.7.2/ethers.umd.min.js';
+    document.head.appendChild(script);
+}
 /* ===== OWL IN HOOD v6 COMPLETE — Embedded + noxa API + on-chain liquidity ===== */
 const EXPLORER = 'https://robinhoodchain.blockscout.com';
 const RPC = 'https://robinhood-mainnet.g.alchemy.com/v2/Uu5_9CulvnpKfSOPc972S';
 const NOXA_API = 'https://awk00kk00gskkw0o8kc488kg.notoriouslywrong.com';
-const MY_API = 'x';
-const API_KEY = '';
+const MY_API = 'x'; // 'https://api.hoodterminal.xyz/api/v1';
+const API_KEY = 'b935dd38cbf2aa98540223f4390680895282cd1438fc151a8456b74e89ab9172';
 /* ===== MANUAL LOGOS (for tokens with no logo from APIs) ===== */
 const MANUAL_LOGOS = {
   '0x01637b14b7378b99de75a64d50656d98488d9a4d': 'logos/marian.png' // MARIAN
@@ -208,7 +212,7 @@ const IPFS_GATEWAYS = ['https://ipfs.io/ipfs/', 'https://dweb.link/ipfs/'];
 var PINNED_TOKENS = {
   '0x70e2dfbb4d3fe46d16db79a103d060c904c1e14c': true
 };
-var DEFAULT_TOKEN_ADDR = '0x70e2dfbb4d3fe46d16db79a103d060c904c1e14c'; // $HTERM
+var DEFAULT_TOKEN_ADDR = '0x70e2dfbb4d3fe46d16db79a103d060c904c1e14c'; // $OIH
 
 /* ===== BLOCKLIST ===== */
 var BLOCKED_TOKENS = {
@@ -512,7 +516,7 @@ function renderTokenList() {
   } else {
     tokens.sort(function(a, b) { return (b.ttx || 0) - (a.ttx || 0); });
   }
-  // Pin $HTERM and other pinned tokens to top
+  // Pin $OIH and other pinned tokens to top
   var pinned = tokens.filter(function(t) { return PINNED_TOKENS[(t.a || '').toLowerCase()]; });
   var rest = tokens.filter(function(t) { return !PINNED_TOKENS[(t.a || '').toLowerCase()]; });
   tokens = pinned.concat(rest);
@@ -1081,14 +1085,152 @@ function renderInfo() {
 }
 
 /* ===== SWAP PANEL ===== */
-function updateSwapPanel() { return; }
+function updateSwapPanel_removed() {
+  if (!currentToken) return;
+  var t = currentToken;
+  document.getElementById('swapRateToken').textContent = t.s;
+  document.getElementById('swapRate').textContent = (t.priceEth || 0).toExponential(5);
+  document.getElementById('swapInputUnit').textContent = swapSide === 'buy' ? 'ETH' : t.s;
+  document.getElementById('swapOutputUnit').textContent = swapSide === 'buy' ? t.s : 'ETH';
+  document.getElementById('swapInputLabel').textContent = swapSide === 'buy' ? 'Pay' : 'Sell';
+  // Show wallet balance if connected
+  if (window.userAccount) {
+    document.getElementById('swapAvail').textContent = swapSide === 'buy' ? 'Wallet connected' : 'Wallet connected';
+  } else {
+    document.getElementById('swapAvail').textContent = 'Connect wallet';
+  }
+  var liq = tokenLiquidity[t.a];
+  if (liq) {
+    document.getElementById('swapLiq').textContent = fmtEth(liq.totalEth) + ' ETH (' + fmtC(liq.totalUsd) + ')';
+  } else {
+    document.getElementById('swapLiq').textContent = t.liqEth ? fmtEth(t.liqEth) + ' ETH' : '—';
+  }
+  calcSwapOutput();
+}
 
-function calcSwapOutput() { return; }
+function calcSwapOutput_removed() {
+  if (!currentToken) return;
+  var amount = parseFloat(document.getElementById('swapAmountInput').value) || 0;
+  var price = currentToken.priceEth || 0;
+  var liq = tokenLiquidity[currentToken.a];
+  var liqEth = liq ? (liq.wethReserve || liq.ethReserve) : (currentToken.liqEth || 0);
+  var outputEl = document.getElementById('swapOutput');
+  var impactEl = document.getElementById('swapImpact');
+  var minEl = document.getElementById('swapMinRecv');
+  var btnEl = document.getElementById('btnSwapMain');
 
-function setSwapSide(side) { return; }
+  if (amount <= 0) {
+    if (outputEl) outputEl.textContent = '0.00';
+    if (impactEl) { impactEl.textContent = '0.00%'; impactEl.style.color = ''; }
+    if (minEl) minEl.textContent = '\u2014';
+    if (btnEl) { btnEl.classList.add('disabled'); }
+    return;
+  }
+  if (btnEl) btnEl.classList.remove('disabled');
+
+  if (swapSide === 'buy') {
+    var tokensOut = price > 0 ? amount / price : 0;
+    var impact = liqEth > 0 ? Math.min((amount / liqEth) * 100, 50) : 0;
+    var minRecv = tokensOut * (1 - swapSlippage / 100);
+    if (outputEl) outputEl.textContent = fmtT(tokensOut);
+    if (impactEl) { impactEl.textContent = impact.toFixed(2) + '%'; impactEl.style.color = impact > 5 ? '#f87171' : impact > 1 ? '#f0c035' : '#2dd4bf'; }
+    if (minEl) minEl.textContent = fmtT(minRecv) + ' ' + currentToken.s;
+  } else {
+    var ethOut = price > 0 ? amount * price : 0;
+    var impact2 = liqEth > 0 ? Math.min((ethOut / liqEth) * 100, 50) : 0;
+    var minRecv2 = ethOut * (1 - swapSlippage / 100);
+    if (outputEl) outputEl.textContent = fmtE(ethOut);
+    if (impactEl) { impactEl.textContent = impact2.toFixed(2) + '%'; impactEl.style.color = impact2 > 5 ? '#f87171' : impact2 > 1 ? '#f0c035' : '#2dd4bf'; }
+    if (minEl) minEl.textContent = fmtE(minRecv2) + ' ETH';
+  }
+}
+
+function setSwapSide_removed(side) {
+  swapSide = side;
+  document.querySelectorAll('.swap-side-btn').forEach(function(b) { b.classList.remove('active'); });
+  document.querySelector('.swap-side-btn[data-side="' + side + '"]').classList.add('active');
+  var btn = document.getElementById('btnSwapMain');
+  if (btn) { btn.className = 'btn-swap-action ' + (side === 'buy' ? 'btn-buy' : 'btn-sell'); btn.textContent = side === 'buy' ? 'Buy ' + (currentToken ? currentToken.s : '') : 'Sell ' + (currentToken ? currentToken.s : ''); }
+  updateSwapPanel();
+}
 
 
-async function executeSwap() { return; }
+async function executeSwap_removed() {
+  var amount = parseFloat(document.getElementById('swapAmountInput').value) || 0;
+  if (amount <= 0) { showToast('Enter an amount first'); return; }
+  if (!window.userAccount) { showToast('Connect wallet first to execute swap'); return; }
+  if (!currentToken) { showToast('Select a token first'); return; }
+
+  const provider = new ethers.providers.Web3Provider(window.ethereum);
+  const signer = provider.getSigner();
+  const router = new ethers.Contract(SWAP_ROUTER_ADDR, ROUTER_ABI, signer);
+  
+  const isBuy = swapSide === 'buy';
+  const tokenIn = isBuy ? WETH_ADDR : currentToken.a;
+  const tokenOut = isBuy ? currentToken.a : WETH_ADDR;
+  const amountIn = ethers.utils.parseUnits(amount.toString(), isBuy ? 18 : currentToken.dec || 18);
+  
+  showToast('Initiating ' + (isBuy ? 'Buy' : 'Sell') + '...');
+
+  // --- Slippage protection (amountOutMinimum) ---
+  // Compute expected output from current price, then subtract user slippage.
+  const px = currentToken.priceEth || 0;
+  const outDec = isBuy ? (currentToken.dec || 18) : 18;
+  let expectedOut = 0;
+  if (px > 0) { expectedOut = isBuy ? (amount / px) : (amount * px); }
+  const slipFactor = Math.max(0, 1 - (swapSlippage || 5) / 100);
+  let amountOutMinimum = ethers.BigNumber.from(0);
+  if (expectedOut > 0) {
+    const minOut = expectedOut * slipFactor;
+    // Cap decimals to token precision to avoid parseUnits overflow
+    const minOutStr = minOut.toFixed(Math.min(outDec, 18));
+    try { amountOutMinimum = ethers.utils.parseUnits(minOutStr, outDec); } catch (e) { amountOutMinimum = ethers.BigNumber.from(0); }
+  }
+
+  try {
+    // 1. Jika SELL, butuh Approve token dulu
+    if (!isBuy) {
+        const tokenContract = new ethers.Contract(tokenIn, ERC20_ABI, signer);
+        const allowance = await tokenContract.allowance(window.userAccount, SWAP_ROUTER_ADDR);
+        if (allowance.lt(amountIn)) {
+            showToast('Approving token...');
+            const approveTx = await tokenContract.approve(SWAP_ROUTER_ADDR, ethers.constants.MaxUint256);
+            await approveTx.wait();
+            showToast('Approval successful!');
+        }
+    }
+
+    // 2. Execute Swap
+    const params = {
+      tokenIn: tokenIn,
+      tokenOut: tokenOut,
+      fee: 3000, // 0.3% fee tier as default for Uniswap V3
+      recipient: window.userAccount,
+      amountIn: amountIn,
+      amountOutMinimum: amountOutMinimum, // slippage-protected min output
+      sqrtPriceLimitX96: 0
+    };
+
+    let tx;
+    if (isBuy) {
+      // Buy token with ETH (WETH)
+      tx = await router.exactInputSingle(params, { value: amountIn });
+    } else {
+      // Sell token for ETH
+      tx = await router.exactInputSingle(params);
+    }
+
+    showToast('Transaction sent! Waiting for confirmation...');
+    const receipt = await tx.wait();
+    showToast('Swap Successful! Hash: ' + receipt.transactionHash.substring(0, 10) + '...');
+    
+    // Refresh data
+    setTimeout(loadTokenData, 2000);
+  } catch (err) {
+    console.error(err);
+    showToast('Swap Failed: ' + (err.reason || err.message || 'Unknown error'));
+  }
+}
 
 
 /* ===== RIGHT PANEL ===== */
@@ -1239,7 +1381,7 @@ async function pollNewTokens() {
     if (added > 0) {
       document.getElementById('sbTabAll').textContent = 'ALL (' + allTokens.length + ')';
       renderTokenList();
-      // Auto-select $HTERM as default, fallback to first available token
+      // Auto-select $OIH as default, fallback to first available token
       if (!HT.state.currentPairAddress && allTokens.length > 0) {
         var def = allTokens.find(function(t) { return (t.a || '').toLowerCase() === DEFAULT_TOKEN_ADDR; });
         if (!def) def = allTokens.find(function(t) { return !BLOCKED_TOKENS[(t.a || '').toLowerCase()]; });
@@ -1428,20 +1570,128 @@ function mergeOurPrices() { return; }
 var portfolioData = null;
 var portfolioLoading = false;
 
-async function fetchPortfolio(walletAddr) { return; }
+async function fetchPortfolio(walletAddr) {
+  if (!walletAddr || portfolioLoading) return;
+  portfolioLoading = true;
+  try {
+    // Get ETH balance
+    var ethRes = await (await fetch(RPC, {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({jsonrpc:'2.0',id:0,method:'eth_getBalance',params:[walletAddr,'latest']})
+    })).json();
+    var ethBal = parseInt(ethRes.result||'0x0',16) / 1e18;
 
-function renderPortfolio() { return; }
+    // Batch balanceOf for all tokens via JSON-RPC batch (chunks of 100)
+    var padded = walletAddr.toLowerCase().replace('0x','').padStart(64,'0');
+    var tokens = allTokens.filter(function(t){ return t.a && t.a.length===42; });
+    var CHUNK = 100;
+    var holdings = [];
+
+    for (var ci = 0; ci < tokens.length; ci += CHUNK) {
+      var chunk = tokens.slice(ci, ci + CHUNK);
+      var batch = [];
+      chunk.forEach(function(t, i) {
+        batch.push({jsonrpc:'2.0', id:ci+i+1, method:'eth_call', params:[{to:t.a, data:'0x70a08231'+padded},'latest']});
+      });
+      var resp = await (await fetch(RPC, {
+        method:'POST', headers:{'Content-Type':'application/json'},
+        body: JSON.stringify(batch)
+      })).json();
+
+      if (Array.isArray(resp)) {
+        resp.forEach(function(r) {
+          var idx = r.id - 1;
+          var token = tokens[idx];
+          if (!token || !r.result || r.result.length < 66) return;
+          try {
+            var bal = BigInt(r.result);
+            if (bal > 0n) {
+              var dec = token.dec || 18;
+              var divisor = BigInt(10) ** BigInt(dec);
+              var whole = Number(bal / divisor);
+              var frac = Number(bal % divisor) / Number(divisor);
+              var humanBal = whole + frac;
+              var priceEth = token.priceEth || 0;
+              var valEth = humanBal * priceEth;
+              if (valEth > 0.0001 || humanBal > 0) {
+                holdings.push({token:token, balance:humanBal, priceEth:priceEth, valEth:valEth});
+              }
+            }
+          } catch(e) {}
+        });
+      }
+    }
+
+    holdings.sort(function(a,b){ return b.valEth - a.valEth; });
+    var totalTokenEth = holdings.reduce(function(s,h){ return s+h.valEth; }, 0);
+    var totalEth = ethBal + totalTokenEth;
+
+    portfolioData = {
+      ethBalance: ethBal,
+      holdings: holdings,
+      totalTokenEth: totalTokenEth,
+      totalEth: totalEth,
+      totalUsd: totalEth * ethPriceUsd,
+      updatedAt: Date.now()
+    };
+  } catch(e) { console.error('Portfolio fetch error:', e); }
+  portfolioLoading = false;
+}
+
+function renderPortfolio() {
+  var container = document.getElementById('txnList');
+  if (!window.userAccount) {
+    container.innerHTML = '<div class="loading-placeholder" style="text-align:center;padding:40px 20px;">' +
+      '<div style="font-size:14px;color:var(--text-dim);margin-bottom:16px;">Connect wallet to view your portfolio</div>' +
+      '<button class="btn-connect" onclick="document.getElementById(\'btnConnect\').click()">Connect Wallet</button>' +
+      '</div>';
+    return;
+  }
+  if (portfolioLoading) {
+    container.innerHTML = '<div class="loading-placeholder">Loading portfolio...</div>';
+    return;
+  }
+  if (!portfolioData || portfolioData.holdings.length === 0) {
+    var ethHtml = portfolioData && portfolioData.ethBalance > 0 ?
+      '<div style="color:var(--green-bright);margin-top:8px;">ETH: ' + portfolioData.ethBalance.toFixed(4) + ' ($' + (portfolioData.ethBalance * ethPriceUsd).toFixed(2) + ')</div>' : '';
+    container.innerHTML = '<div class="loading-placeholder" style="text-align:center;padding:40px 20px;">' +
+      '<div style="font-size:14px;color:var(--text-dim);">No token holdings found</div>' + ethHtml + '</div>';
+    return;
+  }
+
+  var html = '<div class="portfolio-summary">' +
+    '<div class="pf-total"><span class="pf-total-label">Portfolio Value</span>' +
+    '<span class="pf-total-eth">' + portfolioData.totalEth.toFixed(4) + ' ETH</span>' +
+    '<span class="pf-total-usd">$' + portfolioData.totalUsd.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2}) + '</span></div>' +
+    '<div class="pf-eth-row"><span class="pf-asset"><span class="pf-symbol">ETH</span></span>' +
+    '<span class="pf-bal">' + portfolioData.ethBalance.toFixed(4) + '</span>' +
+    '<span class="pf-val">' + (portfolioData.ethBalance * ethPriceUsd).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2}) + '</span></div>';
+
+  portfolioData.holdings.forEach(function(h) {
+    var pct = portfolioData.totalEth > 0 ? (h.valEth / portfolioData.totalEth * 100) : 0;
+    html += '<div class="pf-row">' +
+      '<span class="pf-asset">' +
+        (h.token.logo ? '<img class="pf-logo" src="' + h.token.logo + '" onerror="this.style.display=\'none\'">' : '') +
+        '<span class="pf-symbol">' + (h.token.s || '?') + '</span></span>' +
+      '<span class="pf-bal">' + fmtN(h.balance, h.balance >= 1000 ? 0 : 2) + '</span>' +
+      '<span class="pf-val">$' + (h.valEth * ethPriceUsd).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2}) + '</span>' +
+      '<span class="pf-pct">' + pct.toFixed(1) + '%</span></div>';
+  });
+
+  html += '</div>';
+  container.innerHTML = html;
+}
 
 /* ===== INIT ===== */
 function init() {
   ethPriceUsd = D.eth || 1650;
   document.getElementById('ethPriceTop').textContent = '$' + ethPriceUsd.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
   allTokens = (D.tokens || []).map(function(t) { t._source = 'embedded'; return normToken(t); });
-  // Ensure $HTERM always exists in token list
+  // Ensure $OIH always exists in token list
   (function() {
     var htermAddr = '0x70e2dfbb4d3fe46d16db79a103d060c904c1e14c';
     if (!allTokens.find(function(t) { return t.a === htermAddr; })) {
-      allTokens.push({ a: htermAddr, s: 'HTERM', n: 'OWL IN HOOD', dec: 18, v: 'V3', p: '0x5d58b7aa532cb88762f254dcfc6e363e65070af3', pools: 1, priceEth: 0, price: 0, ch: 0, mcEth: 0, mc: 0, liqEth: 0, liq: 0, volEth: 0, vol: 0, tx24: 0, ttx: 0, ca: Date.now() / 1000, source: 'hardcoded' });
+      allTokens.push({ a: htermAddr, s: 'OIH', n: 'OWL IN HOOD', dec: 18, v: 'V3', p: '0x5d58b7aa532cb88762f254dcfc6e363e65070af3', pools: 1, priceEth: 0, price: 0, ch: 0, mcEth: 0, mc: 0, liqEth: 0, liq: 0, volEth: 0, vol: 0, tx24: 0, ttx: 0, ca: Date.now() / 1000, source: 'hardcoded' });
     }
   })();
   knownAddrs = new Set(allTokens.map(function(t) { return t.a; }));
@@ -1449,7 +1699,7 @@ function init() {
   document.getElementById('sbTabAll').textContent = 'ALL (' + allTokens.length + ')';
   renderTokenList();
   if (allTokens.length > 0) {
-    // Default to $HTERM if available
+    // Default to $OIH if available
     var def = allTokens.find(function(t) { return (t.a || '').toLowerCase() === DEFAULT_TOKEN_ADDR; });
     if (def) { selectToken(def); }
     else {
@@ -1598,7 +1848,7 @@ document.addEventListener('DOMContentLoaded', function() {
       renderTokenList();
     });
   });
-  (document.getElementById('btnConnect')||{}).addEventListener('click', async function() {
+  document.getElementById('btnConnect').addEventListener('click', async function() {
     var btn = document.getElementById('btnConnect');
     var btnSwap = document.getElementById('btnConnectSwap');
     // REAL MetaMask connection
@@ -1656,11 +1906,11 @@ document.addEventListener('DOMContentLoaded', function() {
     }
   });
   // Mobile swap-card connect button
-  (document.getElementById('btnConnectSwap')||{}).addEventListener('click', function() {
+  document.getElementById('btnConnectSwap').addEventListener('click', function() {
     document.getElementById('btnConnect').click();
   });
   // Portfolio button — switch to portfolio tab
-  (document.getElementById('btnPortfolio')||{}).addEventListener('click', function() {
+  document.getElementById('btnPortfolio').addEventListener('click', function() {
     document.querySelectorAll('.bt-btn').forEach(function(b) { b.classList.remove('active'); });
     var pfTab = document.querySelector('.bt-btn[data-tab="portfolio"]');
     if (pfTab) pfTab.classList.add('active');
@@ -1692,8 +1942,8 @@ document.addEventListener('DOMContentLoaded', function() {
       btn.classList.add('active'); swapSlippage = parseInt(btn.dataset.slip); calcSwapOutput();
     });
   });
-  (document.getElementById('swapAmountInput')||{}).addEventListener('input', calcSwapOutput);
-  (document.getElementById('btnSwapMain')||{}).addEventListener('click', executeSwap);
+  document.getElementById('swapAmountInput').addEventListener('input', calcSwapOutput);
+  document.getElementById('btnSwapMain').addEventListener('click', executeSwap);
   // Copy buttons
   document.querySelectorAll('.copy-btn').forEach(function(btn) {
     btn.addEventListener('click', function() {
