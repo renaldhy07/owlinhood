@@ -42,6 +42,63 @@ body {
 }
 #root { display: flex; flex-direction: column; height: 100vh; }
 
+/* ===== TICKER BAR ===== */
+#tickerBar {
+  width: 100%;
+  height: 28px;
+  min-height: 28px;
+  background: var(--bg-darkest);
+  border-bottom: 1px solid var(--green-dim);
+  overflow: hidden;
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+#tickerBar::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: linear-gradient(90deg, 
+    rgba(142,222,58,0.06) 0%, 
+    rgba(142,222,58,0.02) 50%, 
+    rgba(142,222,58,0.06) 100%);
+  pointer-events: none;
+  z-index: 0;
+}
+.ticker-track {
+  display: flex;
+  align-items: center;
+  white-space: nowrap;
+  animation: tickerScroll 30s linear infinite;
+  gap: 0;
+  position: relative;
+  z-index: 1;
+}
+.ticker-text {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--green);
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  padding: 0 4px;
+  animation: tickerBlink 2.5s ease-in-out infinite;
+}
+.ticker-sep {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--green-dim);
+  padding: 0 10px;
+  opacity: 0.5;
+}
+@keyframes tickerScroll {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(-33.33%); }
+}
+@keyframes tickerBlink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
 /* ===== HAMBURGER ===== */
 .hamburger {
   display: none; background: var(--bg-card); color: var(--text-dim);
