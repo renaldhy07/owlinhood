@@ -60,9 +60,11 @@ body {
 .logo-icon { font-size: 16px; color: var(--green-bright); }
 .logo-text { font-size: 14px; font-weight: 700; letter-spacing: -0.3px; color: var(--text); }
 .logo-version {
-  font-size: 9px; font-family: var(--font-mono); color: var(--green-bright);
-  background: rgba(45,212,191,0.1); padding: 1px 5px; border-radius: 2px;
-  border: 1px solid rgba(45,212,191,0.3);
+  display: inline-flex; align-items: center; justify-content: center;
+  padding: 2px; border-radius: 2px;
+  background: rgba(142,222,58,0.08);
+  border: 1px solid rgba(142,222,58,0.25);
+  line-height: 0;
 }
 .btn-back-story {
   font-size: 10px; font-family: var(--font-mono); color: var(--gold-bright);
