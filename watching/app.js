@@ -1,9 +1,11 @@
 
-// [ethers loading removed]
+
 /* ===== OWL IN HOOD v6 COMPLETE — Embedded + noxa API + on-chain liquidity ===== */
 const EXPLORER = 'https://robinhoodchain.blockscout.com';
 const RPC = 'https://robinhood-mainnet.g.alchemy.com/v2/Uu5_9CulvnpKfSOPc972S';
 const NOXA_API = 'https://awk00kk00gskkw0o8kc488kg.notoriouslywrong.com';
+const MY_API = '';
+const API_KEY = '';
 /* ===== MANUAL LOGOS (for tokens with no logo from APIs) ===== */
 const MANUAL_LOGOS = {
   '0x01637b14b7378b99de75a64d50656d98488d9a4d': 'logos/marian.png' // MARIAN
@@ -217,9 +219,21 @@ var BLOCKED_TOKENS = {
   '0x83bd0c579eaad92f2a6cb4b9e8267edbedaebf82': true,
   '0xb61c30f15475b1e60a89159b4fe648f0af87635a': true
 };
+const WETH_ADDR = '0x0bd7d308f8e1639fab988df18a8011f41eacad73';
+const SWAP_ROUTER_ADDR = '0xCaf681a66D020601342297493863E78C959E5cb2';
+const ROUTER_ABI = [
+  "function exactInputSingle((address tokenIn, address tokenOut, uint24 fee, address recipient, uint256 amountIn, uint256 amountOutMinimum, uint160 sqrtPriceLimitX96)) external payable returns (uint256 amountOut)",
+  "function multicall(bytes[] data) external payable returns (bytes[] results)"
+];
 
 
 // ERC20 ABI fragments for on-chain reads
+const ERC20_ABI = [
+  { "constant": true, "inputs": [], "name": "balanceOf", "outputs": [{ "name": "", "type": "uint256" }], "type": "function" },
+  { "constant": true, "inputs": [{ "name": "", "type": "address" }], "name": "balanceOf", "outputs": [{ "name": "", "type": "uint256" }], "type": "function" },
+  { "constant": true, "inputs": [], "name": "totalSupply", "outputs": [{ "name": "", "type": "uint256" }], "type": "function" },
+  { "constant": true, "inputs": [], "name": "decimals", "outputs": [{ "name": "", "type": "uint8" }], "type": "function" },
+];
 const POOL_ABI = [
   { "constant": true, "inputs": [], "name": "slot0", "outputs": [{ "name": "sqrtPriceX96", "type": "uint160" }, { "name": "tick", "type": "int24" }, { "name": "protocolFee", "type": "uint8" }, { "name": "liquidity", "type": "uint128" }], "type": "function" },
   { "constant": true, "inputs": [], "name": "liquidity", "outputs": [{ "name": "", "type": "uint128" }], "type": "function" },
@@ -301,7 +315,8 @@ let newTokenAddrs = new Set();
 let pollTimer = null;
 let sortCol = null, sortDir = 'desc';
 let fontScale = 1;
-// swap vars removed
+let swapSide = 'buy';
+let swapSlippage = 5; // percent
 let tokenLiquidity = {}; // addr -> {tokenReserve, ethReserve, totalUsd, totalEth, fetched}
 
 /* ===== TOKEN NORMALIZER ===== */
@@ -545,7 +560,8 @@ function selectToken(token) {
       token.liq = liq.totalUsd;
       token._liqOnChainAt = Date.now();
       updateTokenHeader();
-            updateRightPanel();
+      updateSwapPanel();
+      updateRightPanel();
       renderTokenList();
     }
   });
@@ -757,7 +773,7 @@ function updateTokenHeader() {
 async function fetchCandles(addr, interval) {
   // Returns candles as objects: { time, open, high, low, close, volume, trades }
   try {
-    // [removed MY_API fetch]
+    var myResp = await fetch(MY_API + '/ohlc?address=' + encodeURIComponent(addr) + '&interval=' + interval, { cache: 'no-store', headers: {'X-API-Key': API_KEY} });
     if (myResp.ok) {
       var myJson = await myResp.json();
       if (myJson.success && myJson.data.length) {
@@ -821,7 +837,7 @@ async function fetchTrades(addr) {
   } catch (e) { console.error('Noxa error for trades:', e); }
   // Fallback to our backend
   try {
-    // [removed MY_API fetch]
+    var my_resp = await fetch(MY_API + '/swaps?address=' + encodeURIComponent(addr) + '&limit=50', { headers: {'X-API-Key': API_KEY} });
     if (my_resp.ok) {
       var my_result = await my_resp.json();
       if (my_result.success && my_result.data.length) {
@@ -905,7 +921,8 @@ async function loadTabData(rid) {
     renderTrades(trades);
   } else if (curTab === 'toptraders') renderTopTraders(await fetchTrades(currentToken.a));
   else if (curTab === 'holders') renderHolders(currentToken);
-    else if (curTab === 'info') renderInfo();
+  else if (curTab === 'portfolio') { fetchPortfolio(window.userAccount).then(function() { renderPortfolio(); }); }
+  else if (curTab === 'info') renderInfo();
 }
 
 function renderTrades(trades) {
@@ -1064,17 +1081,17 @@ function renderInfo() {
 }
 
 /* ===== SWAP PANEL ===== */
-// [updateSwapPanel removed]
+function updateSwapPanel() { return; }
+
+function calcSwapOutput() { return; }
+
+function setSwapSide(side) { return; }
 
 
-function calcSwapOutput() { /* swap removed */ }
-
-// [setSwapSide removed]
+async function executeSwap() { return; }
 
 
-// [executeSwap removed]
-
-
+/* ===== RIGHT PANEL ===== */
 function updateRightPanel() {
   if (!currentToken) return;
   var t = currentToken;
@@ -1119,7 +1136,8 @@ function updateRightPanel() {
   document.getElementById('contractCreator').textContent = sA(t.creator);
   document.getElementById('contractCreator').title = t.creator;
 
-  }
+  updateSwapPanel();
+}
 
 /* ===== COPY CONTRACT ===== */
 function copyContract(targetId) {
@@ -1171,7 +1189,7 @@ function showToast(msg) {
 var _firstSwapMap = null;
 async function fetchFirstSwapTimes() {
   try {
-    // [removed MY_API fetch]
+    var resp = await fetch(MY_API + '/first-swap', { headers: {'X-API-Key': API_KEY} });
     if (!resp.ok) return;
     var d = await resp.json();
     if (!d.success || !d.data) return;
@@ -1265,7 +1283,7 @@ async function pollTrendingUpdates() {
       renderTokenList();
       if (currentToken) {
         var cur = allTokens.find(function(t) { return t.a === currentToken.a; });
-        if (cur) { currentToken = cur; updateTokenHeader();  }
+        if (cur) { currentToken = cur; updateTokenHeader(); updateSwapPanel(); }
       }
     }
   } catch (e) { }
@@ -1404,7 +1422,7 @@ function updateStatus() {
 var ourPriceMap = {};
 
 function mergeOurPrices() {
-    // [removed MY_API fetch]
+  fetch(MY_API + '/prices', { headers: {'X-API-Key': API_KEY} }).then(function(r) { return r.json(); }).then(function(d) {
     if (!d.success || !d.data) return;
     // Update ETH/USD from our source
     if (d.eth_usd && d.eth_usd > 0) {
@@ -1460,51 +1478,9 @@ function mergeOurPrices() {
 var portfolioData = null;
 var portfolioLoading = false;
 
-// [fetchPortfolio removed]
+async function fetchPortfolio(walletAddr) { return; }
 
-
-// [renderPortfolio removed]
-  var container = document.getElementById('txnList');
-      container.innerHTML = '<div class="loading-placeholder" style="text-align:center;padding:40px 20px;">' +
-      '<div style="font-size:14px;color:var(--text-dim);margin-bottom:16px;">Connect wallet to view your portfolio</div>' +
-      
-      '</div>';
-    return;
-  }
-  if (portfolioLoading) {
-    container.innerHTML = '<div class="loading-placeholder">Loading portfolio...</div>';
-    return;
-  }
-  if (!portfolioData || portfolioData.holdings.length === 0) {
-    var ethHtml = portfolioData && portfolioData.ethBalance > 0 ?
-      '<div style="color:var(--green-bright);margin-top:8px;">ETH: ' + portfolioData.ethBalance.toFixed(4) + ' ($' + (portfolioData.ethBalance * ethPriceUsd).toFixed(2) + ')</div>' : '';
-    container.innerHTML = '<div class="loading-placeholder" style="text-align:center;padding:40px 20px;">' +
-      '<div style="font-size:14px;color:var(--text-dim);">No token holdings found</div>' + ethHtml + '</div>';
-    return;
-  }
-
-  var html = '<div class="portfolio-summary">' +
-    '<div class="pf-total"><span class="pf-total-label">Portfolio Value</span>' +
-    '<span class="pf-total-eth">' + portfolioData.totalEth.toFixed(4) + ' ETH</span>' +
-    '<span class="pf-total-usd">$' + portfolioData.totalUsd.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2}) + '</span></div>' +
-    '<div class="pf-eth-row"><span class="pf-asset"><span class="pf-symbol">ETH</span></span>' +
-    '<span class="pf-bal">' + portfolioData.ethBalance.toFixed(4) + '</span>' +
-    '<span class="pf-val">' + (portfolioData.ethBalance * ethPriceUsd).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2}) + '</span></div>';
-
-  portfolioData.holdings.forEach(function(h) {
-    var pct = portfolioData.totalEth > 0 ? (h.valEth / portfolioData.totalEth * 100) : 0;
-    html += '<div class="pf-row">' +
-      '<span class="pf-asset">' +
-        (h.token.logo ? '<img class="pf-logo" src="' + h.token.logo + '" onerror="this.style.display=\'none\'">' : '') +
-        '<span class="pf-symbol">' + (h.token.s || '?') + '</span></span>' +
-      '<span class="pf-bal">' + fmtN(h.balance, h.balance >= 1000 ? 0 : 2) + '</span>' +
-      '<span class="pf-val">$' + (h.valEth * ethPriceUsd).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2}) + '</span>' +
-      '<span class="pf-pct">' + pct.toFixed(1) + '%</span></div>';
-  });
-
-  html += '</div>';
-  container.innerHTML = html;
-}
+function renderPortfolio() { return; }
 
 /* ===== INIT ===== */
 function init() {
@@ -1574,7 +1550,8 @@ function init() {
           currentToken.liq = liq.totalUsd;
           currentToken._liqOnChainAt = Date.now();
           updateTokenHeader();
-                    updateRightPanel();
+          updateSwapPanel();
+          updateRightPanel();
         }
       });
       fetchOnChainSupply(currentToken).then(function(supply) {
@@ -1585,7 +1562,8 @@ function init() {
       });
     }
     // Refresh portfolio if wallet connected and on portfolio tab
-    );
+    if (window.userAccount && curTab === 'portfolio') {
+      fetchPortfolio(window.userAccount).then(function() { renderPortfolio(); });
     }
   }, 30000);
 
@@ -1670,54 +1648,77 @@ document.addEventListener('DOMContentLoaded', function() {
       renderTokenList();
     });
   });
-  
-    var btnSwap = null;
+  document.getElementById('btnConnect').addEventListener('click', async function() {
+    var btn = document.getElementById('btnConnect');
+    var btnSwap = document.getElementById('btnConnectSwap');
     // REAL MetaMask connection
-    if (false /* wallet removed */) {
+    if (typeof window.ethereum !== 'undefined') {
       try {
-        // [connecting text removed]
-                var accounts = // [ethereum request removed]
+        btn.textContent = 'Connecting...';
+        if (btnSwap) btnSwap.textContent = 'Connecting...';
+        var accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
         if (accounts && accounts.length > 0) {
           var addr = accounts[0];
           btn.classList.add('connected');
           btn.textContent = addr.slice(0, 6) + '...' + addr.slice(-4);
-                    // [userAccount removed]
+          if (btnSwap) { btnSwap.classList.add('connected'); btnSwap.textContent = addr.slice(0, 6) + '...' + addr.slice(-4); }
+          window.userAccount = addr;
           // Check if on Robinhood L2 (chainId 4663 = 0x1237)
           try {
-            var chainId = // [ethereum request removed]
+            var chainId = await window.ethereum.request({ method: 'eth_chainId' });
             if (chainId !== '0x1237') {
               showToast('Wrong network — switch to Robinhood L2 (Chain ID 4663)');
               try {
-                // [wallet_switchEthereumChain removed]
+                await window.ethereum.request({
+                  method: 'wallet_switchEthereumChain',
+                  params: [{ chainId: '0x1237' }],
+                });
               } catch (switchErr) {
                 if (switchErr.code === 4902) {
-                  // [wallet_addEthereumChain removed]
+                  await window.ethereum.request({
+                    method: 'wallet_addEthereumChain',
+                    params: [{
+                      chainId: '0x1237',
+                      chainName: 'Robinhood L2',
+                      nativeCurrency: { name: 'Ether', symbol: 'ETH', decimals: 18 },
+                      rpcUrls: ['https://robinhood-mainnet.g.alchemy.com/v2/Uu5_9CulvnpKfSOPc972S'],
+                      blockExplorerUrls: ['https://robinhoodchain.blockscout.com/'],
+                    }],
+                  });
                 }
               }
             }
           } catch (e) { }
           showToast('Wallet connected: ' + addr.slice(0, 6) + '...' + addr.slice(-4));
-                    // Pre-fetch portfolio data
-          // [portfolio fetch removed] });
+          updateSwapPanel();
+          // Pre-fetch portfolio data
+          fetchPortfolio(addr).then(function() { if (curTab === 'portfolio') renderPortfolio(); });
         }
       } catch (err) {
         btn.textContent = 'Connect Wallet';
-                showToast('Connection rejected');
+        if (btnSwap) btnSwap.textContent = 'Connect Wallet';
+        showToast('Connection rejected');
       }
     } else {
-      // [metamask toast removed]
-      // [metamask text removed]
-          }
+      showToast('MetaMask not found — install metamask.io');
+      btn.textContent = 'Install MetaMask';
+      if (btnSwap) btnSwap.textContent = 'Install MetaMask';
+    }
   });
-    
+  // Mobile swap-card connect button
+  document.getElementById('btnConnectSwap').addEventListener('click', function() {
+    document.getElementById('btnConnect').click();
+  });
   // Portfolio button — switch to portfolio tab
-   });
+  document.getElementById('btnPortfolio').addEventListener('click', function() {
+    document.querySelectorAll('.bt-btn').forEach(function(b) { b.classList.remove('active'); });
     var pfTab = document.querySelector('.bt-btn[data-tab="portfolio"]');
     if (pfTab) pfTab.classList.add('active');
     curTab = 'portfolio';
-          // [portfolio fetch removed] });
+    if (window.userAccount) {
+      fetchPortfolio(window.userAccount).then(function() { renderPortfolio(); });
     } else {
-      // [renderPortfolio removed]
+      renderPortfolio();
     }
   });
   // Sortable headers
@@ -1729,18 +1730,20 @@ document.addEventListener('DOMContentLoaded', function() {
     });
   });
   // Swap panel
-  // [swap-side-btn listeners removed]
+  document.querySelectorAll('.swap-side-btn').forEach(function(btn) {
+    btn.addEventListener('click', function() { setSwapSide(btn.dataset.side); });
+  });
   document.querySelectorAll('.swap-quick-btn').forEach(function(btn) {
-    btn.addEventListener('click', function() {  calcSwapOutput(); });
+    btn.addEventListener('click', function() { document.getElementById('swapAmountInput').value = btn.dataset.amt; calcSwapOutput(); });
   });
   document.querySelectorAll('.slip-btn').forEach(function(btn) {
     btn.addEventListener('click', function() {
       document.querySelectorAll('.slip-btn').forEach(function(b) { b.classList.remove('active'); });
-      // [swapSlippage listener removed]
+      btn.classList.add('active'); swapSlippage = parseInt(btn.dataset.slip); calcSwapOutput();
     });
   });
-  
-  
+  document.getElementById('swapAmountInput').addEventListener('input', calcSwapOutput);
+  document.getElementById('btnSwapMain').addEventListener('click', executeSwap);
   // Copy buttons
   document.querySelectorAll('.copy-btn').forEach(function(btn) {
     btn.addEventListener('click', function() {
@@ -1885,12 +1888,12 @@ function applyFontScale() {
   if (el) el.style.fontSize = (12 * fontScale) + 'px';
   if (chart) chart.applyOptions({ layout: { fontSize: Math.round(11 * fontScale) } });
 }
-    // [removed WebSocket code]
-    // [removed WebSocket code]
-    // [removed WebSocket code]
-    // [removed WebSocket code]
-    // [removed WebSocket code]
-    // [removed WebSocket code]
+// Setup WebSocket for real-time updates from MY_API
+function setupMyWebSocket() {
+  const ws = new WebSocket(MY_API.replace('http', 'ws').replace('/api/v1', '/ws/swaps') + '?key=' + API_KEY);
+  ws.onopen = () => { HT.state.wsStatus = 'connected'; };
+  ws.onerror = () => { HT.state.wsStatus = 'error'; };
+  ws.onmessage = (event) => {
     const msg = JSON.parse(event.data);
     if (msg.type === 'new_swap') {
       const s = msg.data;
